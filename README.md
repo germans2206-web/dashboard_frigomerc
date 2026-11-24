@@ -2,7 +2,7 @@
 
 KPIs de **agua, energía y vapor** por planta frigorífica (2, 3, 8 y 23), comparables entre plantas y por período, leídos **en vivo** desde Google Sheets.
 
-**Sitio:** https://consumo-plantas.germans2206.workers.dev
+**Sitio:** https://consumo-plantas-minerva.germans2206.workers.dev
 
 ## Cómo funciona
 
@@ -51,7 +51,7 @@ npx wrangler deploy   # publica en Cloudflare
 
 Para que cada push a `main` despliegue solo, hay dos caminos:
 
-1. **Workers Builds (recomendado):** en Cloudflare, ir a *Workers & Pages → consumo-plantas → Settings → Builds → Connect* y elegir este repositorio.
+1. **Workers Builds (recomendado):** en Cloudflare, ir a *Workers & Pages → consumo-plantas-minerva → Settings → Builds → Connect* y elegir este repositorio.
 2. **GitHub Actions:** cargar en el repositorio los secrets `CLOUDFLARE_API_TOKEN` (plantilla "Edit Cloudflare Workers") y `CLOUDFLARE_ACCOUNT_ID`, y la variable `CF_DEPLOY_ENABLED=true`. El workflow está en `.github/workflows/deploy.yml`.
 
 El ID de la planilla no se guarda en este repositorio (es público). Antes de desplegar, pega el ID en `SHEET_ID` dentro de `wrangler.jsonc`. El Worker publicado ya lo tiene configurado como variable en Cloudflare.
