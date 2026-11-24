@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consumo de plantas</title>
+<meta name="description" content="Agua, energía y vapor por planta frigorífica, por cabeza y comparados entre plantas y períodos.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232456a6'/%3E%3Cpath d='M16 6s7 7.6 7 12.6a7 7 0 0 1-14 0C9 13.6 16 6 16 6z' fill='none' stroke='white' stroke-width='2.4'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+:root{
+color-scheme: dark;
+--bg:#050a14; --shell:#08101f; --side:#0b1d3b; --side-item:#12305e; --side-on:#2456a6;
+--card:#0c1628; --card-hi:#101c33; --well:#16233b; --line:rgba(148,163,184,.12); --line-2:rgba(148,163,184,.22);
+--t1:#eef3f9; --t2:#adb9cb; --t3:#717f95;
+--accent:#5b9cf0;
+--p2:#3987e5; --p3:#d95926; --p8:#199e70; --p23:#c98500;
+--i-agua:#4aa8ff; --i-energia:#f2b233; --i-vapor:#e879a6; --i-cab:#3cc58f;
+--good:#5bd35b; --good-bg:rgba(12,163,12,.16); --bad:#f08080; --bad-bg:rgba(208,59,59,.17); --neu-bg:rgba(148,163,184,.13);
+--warn:#fab219; --warn-bg:rgba(250,178,25,.13);
+--r-lg:18px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+html{background:var(--bg);scroll-behavior:smooth}
+body{font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--t1);font-size:14px;line-height:1.45;
+-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+background:radial-gradient(1100px 520px at 78% -8%,rgba(56,104,170,.26),transparent 62%),radial-gradient(800px 600px at 4% 108%,rgba(24,90,120,.18),transparent 60%)}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
+background-image:linear-gradient(rgba(148,163,184,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.05) 1px,transparent 1px);background-size:56px 56px;
+-webkit-mask-image:radial-gradient(ellipse at 70% 0%,#000 10%,transparent 70%);mask-image:radial-gradient(ellipse at 70% 0%,#000 10%,transparent 70%)}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.app{position:relative;z-index:1;display:grid;grid-template-columns:84px minmax(0,1fr);margin:16px;min-height:calc(100vh - 32px);
+background:color-mix(in srgb,var(--shell) 86%,transparent);border:1px solid var(--line-2);border-radius:24px;overflow:clip}
+.side{background:linear-gradient(180deg,var(--side),#0a1730);border-right:1px solid var(--line);padding:18px 6px;display:flex;flex-direction:column;align-items:center}
+.side-logo{width:42px;height:42px;border-radius:12px;background:var(--side-on);display:grid;place-items:center;margin-bottom:22px;box-shadow:0 6px 20px rgba(36,86,166,.45)}
+.side-logo svg{width:22px;height:22px}
+.nav{position:sticky;top:18px;display:flex;flex-direction:column;gap:8px;align-items:center}
+.nav a{display:flex;flex-direction:column;align-items:center;gap:5px;text-decoration:none;color:var(--t2);font-size:11.5px;font-weight:500;width:72px;padding:2px 0 4px;position:relative}
+.nav a .ic{width:42px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--side-item);transition:background .15s}
+.nav a svg{width:18px;height:18px;stroke:currentColor}
+.nav a:hover{color:var(--t1)}
+.nav a.on{color:var(--t1);font-weight:600}
+.nav a.on .ic{background:var(--side-on);box-shadow:0 0 0 1px rgba(255,255,255,.12) inset}
+.badge{position:absolute;top:-4px;right:6px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#d03b3b;color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center;border:2px solid var(--side)}
+.main{padding:24px 28px 32px;min-width:0}
+.top{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;scroll-margin-top:16px}
+.title{display:flex;gap:14px;align-items:center;min-width:0}
+.title-ic{width:44px;height:44px;border-radius:12px;border:1px solid var(--line-2);display:grid;place-items:center;background:var(--card);flex:none}
+.title-ic svg{width:20px;height:20px;stroke:var(--t2)}
+h1{font-size:27px;font-weight:650;letter-spacing:-.02em;line-height:1.1}
+.subtitle{color:var(--t2);font-size:13.5px;margin-top:3px}
+.top-ctl{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.pill{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px;border-radius:12px;border:1px solid var(--line-2);background:var(--card);font-size:13px;color:var(--t2);white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--t3)}
+.dot.live{background:var(--good);box-shadow:0 0 0 3px var(--good-bg)}
+.dot.err{background:var(--bad)}
+.dot.warn{background:var(--warn)}
+.seg{display:inline-flex;height:38px;padding:3px;gap:2px;border-radius:12px;border:1px solid var(--line-2);background:var(--card)}
+.seg button{border:0;background:transparent;border-radius:9px;padding:0 11px;cursor:pointer;font-size:13px;font-weight:500;color:var(--t2);white-space:nowrap}
+.seg button:hover{color:var(--t1)}
+.seg button[aria-pressed="true"]{background:var(--side-on);color:#fff}
+.seg.sm{height:34px;border-radius:10px}
+.seg.sm button{font-size:12.5px;padding:0 10px;border-radius:7px}
+.sel{position:relative;display:inline-flex;align-items:center}
+.sel svg{position:absolute;left:12px;width:15px;height:15px;stroke:var(--t2);pointer-events:none}
+.sel select,.sel input{height:38px;border-radius:12px;border:1px solid var(--line-2);background:var(--card);font-size:13px;font-weight:600;padding:0 32px 0 34px;appearance:none;cursor:pointer;color-scheme:dark}
+.sel input{padding:0 10px}
+.sel::after{content:'';position:absolute;right:13px;width:7px;height:7px;border-right:1.6px solid var(--t2);border-bottom:1.6px solid var(--t2);transform:rotate(45deg) translateY(-2px);pointer-events:none}
+.sel.nocaret::after{display:none}
+.sel select option{background:#0c1628}
+.icon-btn{width:38px;height:38px;border-radius:12px;border:1px solid var(--line-2);background:var(--card);display:grid;place-items:center;cursor:pointer}
+.icon-btn:hover{border-color:var(--t3)}
+.icon-btn svg{width:17px;height:17px;stroke:var(--t1)}
+.icon-btn.spin svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.plants-row{display:flex;align-items:center;gap:12px;margin-top:20px;flex-wrap:wrap}
+.plants{display:flex;gap:4px;padding:4px;border:1px solid var(--line-2);border-radius:14px;background:var(--card);flex-wrap:wrap}
+.pbtn{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 13px;border-radius:10px;border:0;background:transparent;cursor:pointer;font-size:13.5px;font-weight:500;color:var(--t2)}
+.pbtn:hover{color:var(--t1);background:rgba(148,163,184,.06)}
+.pbtn .sw{width:8px;height:8px;border-radius:50%}
+.pbtn small{font-size:11px;color:var(--t3);font-weight:500}
+.pbtn small:empty{display:none}
+.pbtn[aria-pressed="true"]{color:var(--t1);background:var(--well)}
+.pbtn.all[aria-pressed="true"]{background:var(--side-on);color:#fff}
+.plants-note{margin-left:auto;color:var(--t3);font-size:13px}
+.context{margin-top:14px;color:var(--t2);font-size:13.5px}
+.context b{color:var(--t1);font-weight:600}
+.banner{display:none;margin-top:14px;padding:11px 14px;border-radius:12px;background:var(--warn-bg);border:1px solid rgba(250,178,25,.3);font-size:13.5px}
+.banner.show{display:block}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:16px}
+.kpi{position:relative;background:linear-gradient(180deg,var(--card-hi),var(--card));border:1px solid var(--line-2);border-radius:var(--r-lg);padding:16px 18px 0;overflow:hidden;min-width:0;display:flex;flex-direction:column}
+.kpi-h{display:flex;align-items:center;gap:10px;font-weight:600;font-size:14.5px}
+.kpi-ic{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;flex:none}
+.kpi-ic svg{width:17px;height:17px}
+.kpi-v{font-size:34px;font-weight:600;letter-spacing:-.03em;line-height:1;margin-top:16px;white-space:nowrap}
+.kpi-v small{font-size:14px;font-weight:500;color:var(--t2);letter-spacing:0;margin-left:5px}
+.kpi-d{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--t2);flex-wrap:wrap}
+.kpi-s{font-size:12.5px;color:var(--t3);margin-top:6px}
+.spark{display:block;width:calc(100% + 36px);height:58px;margin:auto -18px 0;padding-top:12px}
+.delta{display:inline-flex;align-items:center;gap:3px;font-weight:600;font-size:12px;padding:2px 7px;border-radius:7px;white-space:nowrap}
+.delta.good{color:var(--good);background:var(--good-bg)}
+.delta.bad{color:var(--bad);background:var(--bad-bg)}
+.delta.neu{color:var(--t2);background:var(--neu-bg)}
+.sec{display:flex;align-items:center;gap:12px;margin:30px 0 12px;flex-wrap:wrap;scroll-margin-top:16px}
+.sec h2{font-size:17px;font-weight:650;letter-spacing:-.01em}
+.sec p{color:var(--t3);font-size:13px}
+.sec .end{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.grid{display:grid;gap:14px}
+.g-cmp{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}
+.g-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g-detail{grid-template-columns:minmax(0,380px) minmax(0,1fr)}
+.card{background:var(--card);border:1px solid var(--line-2);border-radius:var(--r-lg);min-width:0}
+.card-h{display:flex;align-items:flex-start;gap:10px;padding:16px 18px 4px;flex-wrap:wrap}
+.card-h h3{font-size:15px;font-weight:600}
+.card-h .sub{color:var(--t3);font-size:12.5px;margin-top:2px}
+.card-b{padding:10px 18px 18px}
+.chart{position:relative;height:250px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;font-size:12.5px;color:var(--t2);margin-top:10px}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:16px;height:2.5px;border-radius:2px;display:inline-block}
+.legend i.dash{background:repeating-linear-gradient(90deg,var(--t2) 0 4px,transparent 4px 7px)!important}
+.rk-row{display:grid;grid-template-columns:132px minmax(0,1fr) 118px 76px;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.rk-row:last-child{border-bottom:0}
+.rk-name{display:flex;align-items:center;gap:9px;font-weight:600;font-size:13.5px;min-width:0;white-space:nowrap}
+.rk-pos{width:22px;height:22px;border-radius:7px;background:var(--well);display:grid;place-items:center;font-size:11.5px;font-weight:700;color:var(--t2);flex:none}
+.rk-pos.first{background:var(--good-bg);color:var(--good)}
+.rk-name .sw{width:8px;height:8px;border-radius:50%;flex:none}
+.rk-val{text-align:right;font-size:17px;font-weight:600;letter-spacing:-.01em;white-space:nowrap}
+.rk-val small{font-size:11.5px;color:var(--t3);font-weight:500;margin-left:3px}
+.rk-delta{text-align:right}
+.rk-empty{color:var(--t3);font-size:12.5px}
+.bar{position:relative;height:10px;border-radius:5px;background:var(--well)}
+.bar .fill{position:absolute;left:0;top:0;bottom:0;border-radius:5px;transform-origin:left}
+.bar .prev{position:absolute;top:-4px;bottom:-4px;width:2px;border-radius:1px;background:var(--t1);opacity:.85;margin-left:-1px}
+.bar .goal{position:absolute;top:-6px;bottom:-6px;width:0;border-left:1.5px dashed var(--t1);margin-left:-.75px}
+.grow .fill{animation:grow .9s cubic-bezier(.2,.75,.2,1) both}
+@keyframes grow{from{transform:scaleX(0)}}
+.rk-foot{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--t3);padding-top:12px;border-top:1px solid var(--line);margin-top:2px}
+.rk-foot span{display:inline-flex;align-items:center;gap:7px}
+.rk-foot .k1{width:16px;height:8px;border-radius:4px;background:var(--t2)}
+.rk-foot .k2{width:2px;height:13px;background:var(--t1)}
+.rk-foot .k3{height:13px;border-left:1.5px dashed var(--t1)}
+.dv-row{display:grid;grid-template-columns:96px minmax(0,1fr) 68px;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
+.dv-row:last-child{border-bottom:0}
+.dv-axis{position:relative;height:22px}
+.dv-axis::before{content:'';position:absolute;left:50%;top:-7px;bottom:-7px;border-left:1px solid var(--line-2)}
+.dv-axis .b{position:absolute;top:4px;height:14px;border-radius:4px}
+.dv-axis .b.good{background:var(--good);right:50%}
+.dv-axis .b.bad{background:var(--bad);left:50%}
+.dv-pct{text-align:right;font-weight:600;font-size:13.5px}
+.dv-pct.good{color:var(--good)}
+.dv-pct.bad{color:var(--bad)}
+.dv-scale{display:grid;grid-template-columns:96px minmax(0,1fr) 68px;gap:12px;font-size:11.5px;color:var(--t3);padding-top:8px}
+.dv-scale div{display:flex;justify-content:space-between}
+.report-big{display:flex;align-items:baseline;gap:10px;padding:6px 0 14px}
+.report-big b{font-size:52px;font-weight:600;letter-spacing:-.04em;line-height:1}
+.report-big span{color:var(--t2);font-size:13.5px}
+.rp{display:flex;flex-direction:column;gap:6px}
+.rp-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--well);font-size:13px}
+.rp-row .st,.rp-row .sw{width:8px;height:8px;border-radius:50%;flex:none}
+.rp-row .st{box-shadow:0 0 0 3px rgba(255,255,255,.04)}
+.rp-row b{font-weight:600}
+.rp-row b{font-weight:600;white-space:nowrap}
+.rp-txt{display:flex;flex-direction:column;min-width:0}
+.rp-row .meta{color:var(--t3);font-size:12px;margin-top:1px}
+.rp-row .days{margin-left:auto;font-weight:600;color:var(--t2);font-size:12.5px;white-space:nowrap}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{font-size:12px;font-weight:600;color:var(--t2);text-align:right;padding:11px 14px;background:var(--well);white-space:nowrap;user-select:none}
+#tbl th{cursor:pointer}
+th:first-child{border-radius:10px 0 0 10px}
+th:last-child{border-radius:0 10px 10px 0}
+th small{font-weight:500;color:var(--t3);margin-left:3px}
+th .ar{opacity:.45;margin-left:4px;font-size:10px}
+th.on .ar{opacity:1;color:var(--accent)}
+td{padding:12px 14px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th.l,td.l{text-align:left}
+#tbl tbody tr[data-id]{cursor:pointer}
+tbody tr[data-id]:hover td{background:rgba(148,163,184,.04)}
+tbody tr.focus td{background:rgba(91,156,240,.08)}
+tr.total td{font-weight:650;border-bottom:0;border-top:1px solid var(--line-2)}
+.tname{display:flex;align-items:center;gap:9px;font-weight:600}
+.tname .sw{width:8px;height:8px;border-radius:50%}
+.tname small{color:var(--t3);font-weight:500}
+.tv{font-weight:600}
+.tc{display:block;font-size:11.5px;color:var(--t3);margin-top:2px}
+.gm{display:inline-flex;width:17px;height:17px;border-radius:50%;align-items:center;justify-content:center;font-size:9.5px;font-weight:800;margin-right:6px;vertical-align:1px;font-style:normal}
+.gm.ok{background:var(--good-bg);color:var(--good)}
+.gm.no{background:var(--bad-bg);color:var(--bad)}
+.tnote{color:var(--t3);font-size:12.5px}
+.t-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--t3);padding:12px 4px 0}
+.alerts{list-style:none;display:flex;flex-direction:column;gap:8px}
+.alerts li{display:flex;gap:10px;padding:11px 12px;border-radius:12px;background:var(--well);font-size:13px;color:var(--t2);line-height:1.4}
+.alerts li .ai{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;flex:none;font-size:11px;font-weight:800}
+.alerts li.w .ai{background:var(--warn-bg);color:var(--warn)}
+.alerts li.b .ai{background:var(--bad-bg);color:var(--bad)}
+.alerts li.ok .ai{background:var(--good-bg);color:var(--good)}
+.alerts li b{color:var(--t1);font-weight:600}
+footer{margin-top:28px;text-align:center;color:var(--t3);font-size:12px}
+.skel{border-radius:var(--r-lg);background:var(--card);border:1px solid var(--line);min-height:188px;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.55}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+@media (max-width:1240px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.g-cmp,.g-detail{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:900px){
+.app{grid-template-columns:minmax(0,1fr);margin:0;border-radius:0;border:0;padding-bottom:72px}
+.side{position:fixed;left:0;right:0;bottom:0;z-index:40;flex-direction:row;padding:6px 8px;border-right:0;border-top:1px solid var(--line-2)}
+.side-logo{display:none}
+.nav{position:static;flex-direction:row;justify-content:space-around;width:100%}
+.nav a{width:auto;flex:1}
+.nav a .ic{height:28px;width:40px}
+.g-2{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:640px){
+.main{padding:16px 16px 24px}
+h1{font-size:22px}
+.top-ctl{margin-left:0;justify-content:flex-start}
+.kpis{grid-template-columns:minmax(0,1fr)}
+.plants-note{margin-left:0}
+.rk-row{grid-template-columns:minmax(0,1fr) auto;row-gap:10px}
+.rk-row .bar,.rk-row .rk-empty{grid-column:1/-1;grid-row:2}
+.rk-delta{display:none}
+.dv-row,.dv-scale{grid-template-columns:76px minmax(0,1fr) 58px}
+.chart{height:220px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="side" aria-label="Secciones">
+<div class="side-logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg></div>
+<nav class="nav">
+<a href="#resumen" data-s="resumen" class="on"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></span>Resumen</a>
+<a href="#comparar" data-s="comparar"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M4 12h16M4 18h7"/></svg></span>Comparar</a>
+<a href="#tendencias" data-s="tendencias"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Tendencias</a>
+<a href="#detalle" data-s="detalle"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></span>Detalle</a>
+<a href="#alertas" data-s="alertas"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg></span>Alertas<span class="badge" id="alert-badge" hidden>0</span></a>
+</nav>
+</aside>
+<main class="main">
+<header class="top" id="resumen">
+<div class="title">
+<div class="title-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M12 14l3-3"/><path d="M4.9 19a9 9 0 1 1 14.2 0"/></svg></div>
+<div><h1>Consumo de plantas</h1><div class="subtitle" id="subtitle">Agua, energía y vapor por planta</div></div>
+</div>
+<div class="top-ctl">
+<span class="pill" id="status" title=""><span class="dot" id="status-dot"></span><span id="status-txt">Conectando con la planilla</span></span>
+<div class="seg" id="f-gran" role="group" aria-label="Agrupar"><button data-v="m">Mes</button><button data-v="q">Trimestre</button><button data-v="y">Año</button><button data-v="c">Fechas</button></div>
+<label class="sel" id="g-period"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><select id="f-period" aria-label="Período"></select></label>
+<span id="g-range" hidden style="display:inline-flex;gap:6px"><label class="sel nocaret"><input type="date" id="f-from" aria-label="Desde"></label><label class="sel nocaret"><input type="date" id="f-to" aria-label="Hasta"></label></span>
+<button class="icon-btn" id="btn-refresh" title="Leer la planilla ahora" aria-label="Actualizar datos"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>
+</div>
+</header>
+<div class="plants-row">
+<div class="plants" id="f-plants" role="group" aria-label="Plantas"></div>
+<div class="seg sm" id="f-comp" role="group" aria-label="Comparar con"><button data-v="prev">vs período anterior</button><button data-v="yoy">vs año anterior</button></div>
+<span class="plants-note" id="plants-note"></span>
+</div>
+<p class="context" id="context">&nbsp;</p>
+<div class="banner" id="banner" role="status"></div>
+<section class="kpis" id="kpis" aria-label="Indicadores principales"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></section>
+<div class="sec" id="comparar"><h2>Comparativo entre plantas</h2><p id="cmp-note"></p>
+<div class="end"><div class="seg sm" id="f-fam" role="group" aria-label="Indicador"><button data-v="agua">Agua</button><button data-v="energia">Energía</button><button data-v="vapor">Vapor</button></div>
+<div class="seg sm" id="f-base" role="group" aria-label="Base"><button data-v="cab">Por cabeza</button><button data-v="total">Total</button></div></div>
+</div>
+<div class="grid g-cmp">
+<div class="card">
+<div class="card-h"><div><h3 id="rk-title">Ranking</h3><div class="sub" id="rk-sub"></div></div></div>
+<div class="card-b"><div id="rk"></div>
+<div class="rk-foot"><span><i class="k1"></i>Período actual</span><span><i class="k2"></i>Período de comparación</span><span><i class="k3"></i>Meta</span></div></div>
+</div>
+<div class="card">
+<div class="card-h"><div><h3>Variación por planta</h3><div class="sub" id="dv-sub"></div></div></div>
+<div class="card-b"><div id="dv"></div><div class="dv-scale" id="dv-scale"></div></div>
+</div>
+</div>
+<div class="sec" id="tendencias"><h2>Tendencias</h2><p id="trend-note">Día por día dentro del período elegido</p></div>
+<div class="grid g-2">
+<div class="card"><div class="card-h"><div><h3>Consumo de agua</h3><div class="sub" id="u-agua"></div></div></div><div class="card-b"><div class="chart"><canvas id="ch-agua" aria-label="Agua por día"></canvas></div><div class="legend" id="lg-agua"></div></div></div>
+<div class="card"><div class="card-h"><div><h3>Consumo de energía</h3><div class="sub" id="u-energia"></div></div></div><div class="card-b"><div class="chart"><canvas id="ch-energia" aria-label="Energía por día"></canvas></div><div class="legend" id="lg-energia"></div></div></div>
+<div class="card"><div class="card-h"><div><h3>Consumo de vapor</h3><div class="sub" id="u-vapor"></div></div></div><div class="card-b"><div class="chart"><canvas id="ch-vapor" aria-label="Vapor por día"></canvas></div><div class="legend" id="lg-vapor"></div></div></div>
+<div class="card"><div class="card-h"><div><h3 id="m-title">Evolución mensual</h3><div class="sub" id="m-sub"></div></div></div><div class="card-b"><div class="chart"><canvas id="ch-month" aria-label="Evolución mensual"></canvas></div><div class="legend" id="lg-month"></div></div></div>
+</div>
+<div class="sec" id="detalle"><h2>Detalle por planta</h2><p>Clic en una fila para ver solo esa planta; clic de nuevo para volver a todas</p></div>
+<div class="card"><div class="card-h"><div><h3>Resumen por planta</h3><div class="sub" id="tb-sub"></div></div></div>
+<div class="card-b tbl-wrap"><table id="tbl"></table>
+<div class="t-legend"><span><i class="gm ok">✓</i>Dentro de meta</span><span><i class="gm no">▲</i>Excede meta</span><span>Debajo de cada valor, el período de comparación</span></div></div></div>
+<div class="grid g-detail" style="margin-top:14px">
+<div class="card"><div class="card-h"><div><h3>Plantas reportando</h3><div class="sub" id="rp-sub"></div></div></div>
+<div class="card-b"><div class="report-big" id="rp-big"></div><div class="rp" id="rp"></div></div></div>
+<div class="card" id="alertas" style="scroll-margin-top:16px"><div class="card-h"><div><h3>Alertas</h3><div class="sub">Metas excedidas y datos para revisar en la planilla</div></div></div><div class="card-b"><ul class="alerts" id="alerts"></ul></div></div>
+</div>
+<div class="card" style="margin-top:14px"><div class="card-h"><div><h3>Operación de faena y desposte</h3><div class="sub">Promedios del período elegido</div></div></div><div class="card-b tbl-wrap"><table id="tbl-ops"></table></div></div>
+<footer id="foot">Fuente: Google Sheets, pestaña Kpis</footer>
+</main>
+</div>
+<script>
+const CONFIG = { API:'/api/data', REFRESH_MIN:5, OUTLIER_FACTOR:8, TREND_MONTHS:18 };
+const PLANTS = [
+{ id:'2',  name:'Planta 2',  faena:true,  css:'--p2'  },
+{ id:'3',  name:'Planta 3',  faena:true,  css:'--p3'  },
+{ id:'8',  name:'Planta 8',  faena:false, css:'--p8'  },
+{ id:'23', name:'Planta 23', faena:true,  css:'--p23' }
+];
+let METAS = { '2': { agua:2.54, eB:82.08, vB:48.6 } };
+const METRICS = {
+agua:{ label:'Agua', unit:'m³', cabUnit:'m³/cab', perCab:true, k:1, dec:2, decT:0 },
+eB:{ label:'Energía beef', unit:'kWh', cabUnit:'kWh/cab', perCab:true, k:1, dec:1, decT:0 },
+vB:{ label:'Vapor beef', unit:'t', cabUnit:'kg/cab', perCab:true, k:1000, dec:1, decT:1 },
+eG:{ label:'Energía grasería', unit:'kWh', perCab:false, k:1, decT:0 },
+vG:{ label:'Vapor grasería', unit:'t', perCab:false, k:1, decT:1 },
+eT:{ label:'Energía total', unit:'kWh', perCab:false, k:1, decT:0 },
+vT:{ label:'Vapor total', unit:'t', perCab:false, k:1, decT:1 },
+cab:{ label:'Cabezas', unit:'cab', perCab:false, k:1, decT:0, neutral:true }
+};
+const FAM = {
+agua:{ label:'Agua', cab:'agua', total:'agua', totalLabel:'Agua total' },
+energia:{ label:'Energía', cab:'eB', total:'eT', totalLabel:'Energía total (beef + grasería)' },
+vapor:{ label:'Vapor', cab:'vB', total:'vT', totalLabel:'Vapor total (beef + grasería)' }
+};
+const BASE_KEYS = ['agua','eB','vB','eG','vG'];
+const AGG = BASE_KEYS.concat(['eT','vT']);
+const ICON = {
+agua:'<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+energia:'<path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"/>',
+vapor:'<circle cx="12" cy="13" r="7"/><path d="M12 13l3-3M12 3v3"/>',
+cab:'<path d="M5 5c0 3 2 4 4 4M19 5c0 3-2 4-4 4M8 9h8l-1 8a3 3 0 0 1-6 0z"/><path d="M10.5 13h.01M13.5 13h.01"/>'
+};
+const state = { gran:'m', period:null, from:null, to:null, comp:'prev', plants:new Set(PLANTS.map(p=>p.id)),
+fam:'agua', base:'cab', sort:{i:0,dir:1}, data:[], outliers:[], meta:{}, loading:false, animated:false };
+const charts = {};
+const $ = s => document.querySelector(s);
+const nf = {}; const fmt = (v,d=0) => v==null||!isFinite(v) ? '—' : (nf[d] ||= new Intl.NumberFormat('es-AR',{minimumFractionDigits:d,maximumFractionDigits:d})).format(v);
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const plant = id => PLANTS.find(p=>p.id===id);
+const pColor = id => cssv(plant(id).css);
+const pName = id => plant(id)?.name || 'Planta '+id;
+const MES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const MESL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const D = s => new Date(s+'T00:00:00Z');
+const iso = d => d.toISOString().slice(0,10);
+const addDays = (s,n) => { const d=D(s); d.setUTCDate(d.getUTCDate()+n); return iso(d); };
+const addMonths = (s,n) => { const d=D(s); const day=d.getUTCDate(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth()+n);
+const last=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0)).getUTCDate(); d.setUTCDate(Math.min(day,last)); return iso(d); };
+const endOfMonth = s => { const d=D(s); return iso(new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0))); };
+const daysBetween = (a,b) => Math.round((D(b)-D(a))/864e5)+1;
+const fmtDate = s => { const d=D(s); return `${d.getUTCDate()} ${MES[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
+const fmtShort = s => { const d=D(s); return `${d.getUTCDate()} ${MES[d.getUTCMonth()]}`; };
+const fmtDM = s => s.slice(8,10)+'/'+s.slice(5,7);
+const monthLabel = ym => { const [y,m]=ym.split('-'); return `${MES[+m-1]} ${y.slice(2)}`; };
+const median = a => { if(!a.length) return 0; const s=[...a].sort((x,y)=>x-y); const m=s.length>>1; return s.length%2?s[m]:(s[m-1]+s[m])/2; };
+async function loadData(force=false){
+if (state.loading) return; state.loading=true; $('#btn-refresh').classList.add('spin');
+try{
+const r = await fetch(CONFIG.API+(force?'?fresh=1':''),{cache:'no-store'});
+const j = await r.json();
+if (!r.ok || j.error) throw new Error(j.error || ('HTTP '+r.status));
+ingest(j); state.fetchedAt=Date.now();
+setStatus(j.warning?'warn':'live', `En vivo, ${new Date(j.fetchedAt).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}`, j.warning || `Leído de Google Sheets. Último dato: ${fmtDate(state.lastDate)}`);
+const b=$('#banner'); b.classList.toggle('show',!!j.warning); b.textContent=j.warning||'';
+if (!state.period) initPeriod();
+buildPeriodOptions(); render();
+}catch(e){
+setStatus('err','Sin conexión con la planilla',e.message);
+const b=$('#banner'); b.classList.add('show'); b.textContent=`No se pudieron cargar los datos (${e.message}). Revisa que la planilla siga compartida con cualquier persona con el enlace y vuelve a intentar.`;
+}finally{ state.loading=false; $('#btn-refresh').classList.remove('spin'); }
+}
+function setStatus(kind,txt,title){ $('#status-dot').className='dot '+kind; $('#status-txt').textContent=txt; $('#status').title=title||''; }
+function ingest(j){
+const ix = Object.fromEntries(j.cols.map((c,i)=>[c,i]));
+const known = new Set(PLANTS.map(p=>p.id));
+for (const r of j.rows) if (!known.has(r[ix.p])) { PLANTS.push({id:r[ix.p],name:'Planta '+r[ix.p],faena:true,css:'--t2'}); known.add(r[ix.p]); state.plants.add(r[ix.p]); }
+const rows = j.rows.map(r=>Object.fromEntries(j.cols.map(c=>[c,r[ix[c]]])));
+const outliers=[];
+for (const p of PLANTS) for (const k of BASE_KEYS.concat('cab')){
+const med = median(rows.filter(r=>r.p===p.id&&r[k]>0).map(r=>r[k])); if (!med) continue;
+for (const r of rows) if (r.p===p.id && r[k]>CONFIG.OUTLIER_FACTOR*med){ outliers.push({d:r.d,p:r.p,k,v:r[k],med}); r[k]=null; }
+}
+for (const r of rows){ r.eT = r.eB==null&&r.eG==null ? null : (r.eB||0)+(r.eG||0); r.vT = r.vB==null&&r.vG==null ? null : (r.vB||0)+(r.vG||0); }
+state.outliers=outliers; state.data=rows;
+const withData = rows.filter(r=>BASE_KEYS.some(k=>r[k]!=null&&r[k]!==0));
+state.lastDate = withData.length ? withData.at(-1).d : rows.at(-1)?.d;
+state.firstDate = rows[0]?.d;
+state.meta = { invalidDates:j.invalidDates||0 };
+if (j.metas) METAS=j.metas;
+if ($('#f-plants').children.length !== PLANTS.length+1) buildPlantButtons();
+}
+function periodRange(gran,key){
+if (gran==='m'){ const s=key+'-01'; return {start:s,end:endOfMonth(s),label:`${MESL[+key.slice(5)-1]} ${key.slice(0,4)}`}; }
+if (gran==='q'){ const [y,q]=key.split('-Q'); const s=`${y}-${String((q-1)*3+1).padStart(2,'0')}-01`; return {start:s,end:endOfMonth(addMonths(s,2)),label:`${q}.º trimestre ${y}`}; }
+if (gran==='y') return {start:`${key}-01-01`,end:`${key}-12-31`,label:`Año ${key}`};
+return {start:state.from,end:state.to,label:`${fmtShort(state.from)} al ${fmtDate(state.to)}`};
+}
+function keyFor(gran,s){ const y=s.slice(0,4), m=+s.slice(5,7); return gran==='m'?s.slice(0,7):gran==='q'?`${y}-Q${Math.ceil(m/3)}`:y; }
+function initPeriod(){
+const h = Object.fromEntries(new URLSearchParams(location.hash.slice(1)));
+if (h.g && 'mqyc'.includes(h.g)) state.gran=h.g;
+if (h.c==='yoy'||h.c==='prev') state.comp=h.c;
+if (h.m && FAM[h.m]) state.fam=h.m;
+if (h.b==='total'||h.b==='cab') state.base=h.b;
+if (h.pl){ const s=new Set(h.pl.split(',').filter(id=>PLANTS.some(p=>p.id===id))); if (s.size) state.plants=s; }
+state.from = h.f || addDays(state.lastDate,-29); state.to = h.t || state.lastDate;
+state.period = h.p || keyFor(state.gran,state.lastDate);
+}
+function buildPeriodOptions(){
+const sel=$('#f-period'), keys=[], seen=new Set();
+if (state.gran!=='c'){
+let d=state.lastDate.slice(0,7)+'-01';
+while (d>=state.firstDate.slice(0,7)+'-01'){ const k=keyFor(state.gran,d); if(!seen.has(k)){seen.add(k);keys.push(k);} d=addMonths(d,-1); }
+if (!seen.has(state.period)) state.period=keys[0];
+sel.innerHTML = keys.map(k=>`<option value="${k}" ${k===state.period?'selected':''}>${periodRange(state.gran,k).label}</option>`).join('');
+}
+$('#g-period').hidden = state.gran==='c'; $('#g-range').hidden = state.gran!=='c';
+$('#f-from').value=state.from; $('#f-to').value=state.to;
+$('#f-from').min=$('#f-to').min=state.firstDate; $('#f-from').max=$('#f-to').max=state.lastDate;
+}
+function periods(){
+const cur=periodRange(state.gran,state.period);
+const effEnd = cur.end>state.lastDate?state.lastDate:cur.end, partial = effEnd<cur.end;
+let cs,ce;
+if (state.comp==='yoy'){ cs=addMonths(cur.start,-12); ce=addMonths(cur.end,-12); }
+else if (state.gran==='m'){ cs=addMonths(cur.start,-1); ce=endOfMonth(cs); }
+else if (state.gran==='q'){ cs=addMonths(cur.start,-3); ce=endOfMonth(addMonths(cs,2)); }
+else if (state.gran==='y'){ cs=addMonths(cur.start,-12); ce=addMonths(cur.end,-12); }
+else { const n=daysBetween(cur.start,cur.end); ce=addDays(cur.start,-1); cs=addDays(ce,-(n-1)); }
+const clabel = state.gran==='c' ? `${fmtShort(cs)} al ${fmtDate(ce)}` : periodRange(state.gran,keyFor(state.gran,cs)).label;
+if (partial){ const lim=endOfMonth(addMonths(cs,state.gran==='m'?0:state.gran==='q'?2:11)); ce=addDays(cs,daysBetween(cur.start,effEnd)-1); if (ce>lim) ce=lim; }
+return { cur:{start:cur.start,end:effEnd,label:cur.label,partial}, cmp:{start:cs,end:ce,label:clabel} };
+}
+function blank(){ const z=()=>Object.fromEntries(AGG.concat('cab').map(k=>[k,0])); return {tot:z(),num:z(),den:z(),days:z(),reported:0,ops:{hf:0,hd:0,mpf:0,mpd:0,df:0,dd:0}}; }
+function aggregate(start,end,ids){
+const res={}; for (const id of (ids||PLANTS.map(p=>p.id))) res[id]=blank();
+for (const r of state.data){
+if (r.d<start||r.d>end||!res[r.p]) continue;
+const a=res[r.p]; let any=false;
+for (const k of AGG){ if (r[k]!=null){ a.tot[k]+=r[k]; a.days[k]++; if (BASE_KEYS.includes(k)) any=true; if (r.cab>0){ a.num[k]+=r[k]; a.den[k]+=r.cab; } } }
+if (r.cab>0){ a.tot.cab+=r.cab; a.days.cab++; }
+if (any) a.reported++;
+if (r.hf>0){a.ops.hf+=r.hf;a.ops.df++;} if (r.mpf!=null) a.ops.mpf+=r.mpf;
+if (r.hd>0){a.ops.hd+=r.hd;a.ops.dd++;} if (r.mpd!=null) a.ops.mpd+=r.mpd;
+}
+return res;
+}
+function sumAgg(list){ const s=blank(); for (const a of list){ for (const g of ['tot','num','den','days']) for (const k in s[g]) s[g][k]+=a[g][k]; s.reported+=a.reported; for (const k in s.ops) s.ops[k]+=a.ops[k]; } return s; }
+function val(a,k,base){ const m=METRICS[k]; if (base==='cab'&&m.perCab) return a.den[k]>0?a.num[k]/a.den[k]*m.k:null; return a.days[k]>0?a.tot[k]:null; }
+const famKey = (f,b) => FAM[f][b];
+const unitOf = (k,b) => b==='cab'&&METRICS[k].perCab?METRICS[k].cabUnit:METRICS[k].unit;
+const decOf = (k,b) => b==='cab'&&METRICS[k].perCab?METRICS[k].dec:METRICS[k].decT;
+const pct = (c,p) => c==null||p==null||!p ? null : (c-p)/Math.abs(p)*100;
+function delta(cur,prev,neutral){
+const d=pct(cur,prev); if (d==null) return '';
+const cls = neutral||Math.abs(d)<0.05 ? 'neu' : d>0 ? 'bad' : 'good';
+return `<span class="delta ${cls}">${d>0?'▲':'▼'} ${fmt(Math.abs(d),1)}%</span>`;
+}
+function render(){
+if (!state.data.length) return;
+writeHash();
+const P=periods(); state.P=P;
+const sel=PLANTS.filter(p=>state.plants.has(p.id)).map(p=>p.id);
+const A=aggregate(P.cur.start,P.cur.end), B=aggregate(P.cmp.start,P.cmp.end);
+state.A=A;
+const days=daysBetween(P.cur.start,P.cur.end);
+$('#subtitle').textContent = `${P.cur.label}, agua, energía y vapor`;
+$('#context').innerHTML = `Mostrando <b>${P.cur.label}</b>${P.cur.partial?` hasta el ${fmtShort(P.cur.end)} (${days} días)`:''} contra <b>${P.cmp.label}</b>${P.cur.partial?', a igual cantidad de días':''}.`;
+const withData = PLANTS.filter(p=>A[p.id].reported>0).length;
+$('#plants-note').textContent = `${withData} de ${PLANTS.length} plantas con datos en el período`;
+syncControls();
+renderKPIs(A,B,sel,P);
+renderRanking(A,B,sel,P);
+renderVariation(A,B,sel,P);
+renderDaily(sel,P);
+renderMonthly(sel,P);
+renderReporting(A,P);
+renderTable(A,B,sel,P);
+renderOps(A,sel);
+renderAlerts(A,sel,P);
+$('#foot').textContent = `Fuente: Google Sheets, pestaña Kpis. Último dato ${fmtDate(state.lastDate)}. Se actualiza cada ${CONFIG.REFRESH_MIN} minutos.`;
+}
+function syncControls(){
+for (const [id,v] of [['#f-gran',state.gran],['#f-comp',state.comp],['#f-base',state.base],['#f-fam',state.fam]])
+document.querySelectorAll(id+' button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v));
+const all = state.plants.size===PLANTS.length;
+document.querySelectorAll('#f-plants .pbtn').forEach(b=>{ const v=b.dataset.v; b.setAttribute('aria-pressed', v==='all'?all:(!all&&state.plants.has(v)));
+if (v==='all') return; b.querySelector('.sw').style.background=pColor(v);
+const a=state.A[v]; b.querySelector('small').textContent = !a.reported ? 'sin datos' : plant(v).faena && !a.days.cab ? 'sin cabezas' : ''; });
+}
+function spark(vals,color){
+const pts = vals.map((v,i)=>[i,v]).filter(p=>p[1]!=null);
+if (pts.length<2) return `<svg class="spark" viewBox="0 0 300 58" preserveAspectRatio="none" aria-hidden="true"></svg>`;
+const mx=Math.max(...pts.map(p=>p[1])), mn=Math.min(...pts.map(p=>p[1]));
+const n=Math.max(vals.length-1,1), x=i=>i/n*300, y=v=>52-(mx===mn?0.5:(v-mn)/(mx-mn))*40;
+const line=pts.map((p,i)=>(i?'L':'M')+x(p[0]).toFixed(1)+' '+y(p[1]).toFixed(1)).join(' ');
+const id='g'+Math.random().toString(36).slice(2,8);
+return `<svg class="spark" viewBox="0 0 300 58" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".32"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs><path d="${line} L${x(pts.at(-1)[0]).toFixed(1)} 58 L${x(pts[0][0]).toFixed(1)} 58 Z" fill="url(#${id})"/><path d="${line}" fill="none" stroke="${color}" stroke-width="1.8" vector-effect="non-scaling-stroke"/></svg>`;
+}
+function dayList(P){ const out=[]; for (let d=P.cur.start; d<=P.cur.end; d=addDays(d,1)) out.push(d); return out; }
+function renderKPIs(A,B,sel,P){
+const fs=sel.filter(id=>plant(id).faena);
+const af=sumAgg(fs.map(id=>A[id])), bf=sumAgg(fs.map(id=>B[id])), a=sumAgg(sel.map(id=>A[id]));
+const days=dayList(P), byDay={};
+for (const r of state.data){ if (r.d<P.cur.start||r.d>P.cur.end||!state.plants.has(r.p)) continue; (byDay[r.d] ||= []).push(r); }
+const dailyCab = k => days.map(d=>{ let num=0,den=0; for (const r of byDay[d]||[]) if (plant(r.p).faena && r.cab>0 && r[k]!=null){ num+=r[k]; den+=r.cab; } return den?num/den*METRICS[k].k:null; });
+const dailyHeads = days.map(d=>{ let s=0; for (const r of byDay[d]||[]) if (r.cab>0) s+=r.cab; return s||null; });
+const faenaDays = dailyHeads.filter(v=>v!=null).length;
+const cards = [
+{ f:'agua', k:'agua', title:'Agua por cabeza', color:cssv('--i-agua'), sec:`Total del período ${fmt(val(a,'agua','total'))} m³`, series:dailyCab('agua') },
+{ f:'energia', k:'eB', title:'Energía por cabeza', color:cssv('--i-energia'), sec:`Beef. Con grasería suma ${fmt(val(a,'eT','total'))} kWh`, series:dailyCab('eB') },
+{ f:'vapor', k:'vB', title:'Vapor por cabeza', color:cssv('--i-vapor'), sec:`Beef. Con grasería suma ${fmt(val(a,'vT','total'),1)} t`, series:dailyCab('vB') },
+{ f:'cab', k:'cab', title:'Cabezas faenadas', color:cssv('--i-cab'), sec:`${fmt(faenaDays?af.tot.cab/faenaDays:null)} por día de faena, ${faenaDays} días`, series:dailyHeads }
+];
+$('#kpis').innerHTML = cards.map(c=>{
+const m=METRICS[c.k], isCab=c.k==='cab';
+const cur = isCab ? (af.days.cab?af.tot.cab:null) : val(af,c.k,'cab');
+const prev = isCab ? (bf.days.cab?bf.tot.cab:null) : val(bf,c.k,'cab');
+const dec = isCab?0:m.dec, unit = isCab?'cab':m.cabUnit, t=c.color;
+return `<article class="kpi">
+<div class="kpi-h"><span class="kpi-ic" style="background:color-mix(in srgb,${t} 16%,transparent);border:1px solid color-mix(in srgb,${t} 38%,transparent)"><svg viewBox="0 0 24 24" fill="none" stroke="${t}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON[c.f]}</svg></span>${c.title}</div>
+<div class="kpi-v">${fmt(cur,dec)}<small>${unit}</small></div>
+<div class="kpi-d">${delta(cur,prev,m.neutral)||'<span class="delta neu">sin comparación</span>'}<span>vs ${fmt(prev,dec)}</span></div>
+<div class="kpi-s">${c.sec}</div>
+${spark(c.series,t)}
+</article>`; }).join('');
+}
+function renderRanking(A,B,sel,P){
+const base=state.base, k=famKey(state.fam,base), dec=decOf(k,base), unit=unitOf(k,base);
+const ids = sel.filter(id=>base!=='cab'||plant(id).faena);
+const rows = ids.map(id=>({ id, cur:val(A[id],k,base), prev:val(B[id],k,base), goal: base==='cab'?METAS[id]?.[k]:null }));
+const mx = Math.max(0,...rows.flatMap(r=>[r.cur,r.prev,r.goal]).filter(v=>v!=null))*1.08 || 1;
+rows.sort((a,b)=>(a.cur==null)-(b.cur==null) || (a.cur??0)-(b.cur??0));
+const w = v => Math.max(0,Math.min(100,v/mx*100));
+const nVal = rows.filter(r=>r.cur!=null).length;
+$('#rk-title').textContent = base==='cab' ? `${FAM[state.fam].label} por cabeza` : FAM[state.fam].totalLabel;
+$('#rk-sub').textContent = `${unit}, de menor a mayor consumo, en la misma escala`;
+let pos=0;
+$('#rk').innerHTML = rows.map(r=>{
+const has=r.cur!=null; if (has) pos++;
+const a=A[r.id];
+return `<div class="rk-row">
+<div class="rk-name"><span class="rk-pos ${has&&pos===1&&nVal>1?'first':''}">${has?pos:'–'}</span><span class="sw" style="background:${pColor(r.id)}"></span>${pName(r.id)}</div>
+${has?`<div class="bar ${state.animated?'':'grow'}"><span class="fill" style="width:${w(r.cur)}%;background:${pColor(r.id)}"></span>${r.prev!=null?`<span class="prev" style="left:${w(r.prev)}%" title="${P.cmp.label}: ${fmt(r.prev,dec)}"></span>`:''}${r.goal!=null?`<span class="goal" style="left:${w(r.goal)}%" title="Meta ${fmt(r.goal,dec)}"></span>`:''}</div>`
+:`<div class="rk-empty">${a.days[k]&&!a.days.cab?'Faltan las cabezas en la planilla':'Sin datos en el período'}</div>`}
+<div class="rk-val">${has?`${fmt(r.cur,dec)}<small>${unit}</small>`:''}</div>
+<div class="rk-delta">${delta(r.cur,r.prev)}</div></div>`; }).join('') || '<p class="rk-empty" style="padding:20px 0">Ninguna planta con faena elegida. Cambia a Total para ver la Planta 8.</p>';
+const excl = sel.filter(id=>base==='cab'&&!plant(id).faena);
+$('#cmp-note').textContent = excl.length ? `${excl.map(pName).join(', ')} no faena: se ve en Total` : '';
+}
+function renderVariation(A,B,sel,P){
+const base=state.base, k=famKey(state.fam,base);
+const ids = sel.filter(id=>base!=='cab'||plant(id).faena);
+const rows = ids.map(id=>({id,d:pct(val(A[id],k,base),val(B[id],k,base))}));
+const lim = Math.ceil(Math.max(10,...rows.map(r=>Math.abs(r.d??0)))/10)*10;
+$('#dv-sub').textContent = `Contra ${P.cmp.label}. Hacia la izquierda consume menos; hacia la derecha, más.`;
+$('#dv').innerHTML = rows.map(r=>{
+const name = `<div class="rk-name"><span class="sw" style="background:${pColor(r.id)}"></span>${pName(r.id)}</div>`;
+if (r.d==null) return `<div class="dv-row">${name}<div class="rk-empty" style="text-align:center">Sin datos para comparar</div><div></div></div>`;
+const cls = r.d>0?'bad':'good', wd = Math.min(50,Math.abs(r.d)/lim*50);
+return `<div class="dv-row">${name}<div class="dv-axis"><span class="b ${cls}" style="width:${wd}%"></span></div><div class="dv-pct ${cls}">${r.d>0?'+':'−'}${fmt(Math.abs(r.d),1)}%</div></div>`; }).join('');
+$('#dv-scale').innerHTML = rows.length ? `<span></span><div><span>−${lim}%</span><span>0</span><span>+${lim}%</span></div><span></span>` : '';
+}
+const chartOpts = (unit,dec) => ({
+responsive:true, maintainAspectRatio:false, animation:false,
+interaction:{mode:'index',intersect:false},
+plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#0b1528', borderColor:'rgba(148,163,184,.3)', borderWidth:1, titleColor:'#eef3f9', bodyColor:'#adb9cb',
+padding:10, cornerRadius:10, boxPadding:4, usePointStyle:true, titleFont:{weight:'600'},
+callbacks:{ label:c=>` ${c.dataset.label}: ${fmt(c.parsed.y,dec)} ${unit}` } } },
+scales:{ x:{ grid:{display:false}, border:{display:false}, ticks:{color:'#717f95',font:{size:11.5},maxRotation:0,autoSkip:true,maxTicksLimit:8} },
+y:{ grid:{color:'rgba(148,163,184,.09)'}, border:{display:false}, ticks:{color:'#717f95',font:{size:11.5},maxTicksLimit:5,callback:v=>Math.abs(v)>=1e6?fmt(v/1e6,1)+' M':Math.abs(v)>=1e4?fmt(v/1e3,0)+' k':fmt(v,v<10&&v%1?1:0)} } }
+});
+function draw(id,cfg){ if (charts[id]) charts[id].destroy(); charts[id]=new Chart(document.getElementById(id),cfg); }
+function legendHTML(items){ return items.map(i=>`<span><i class="${i.cls||''}" style="${i.c?'background:'+i.c:''}"></i>${i.t}</span>`).join(''); }
+const lineDs = (id,data,extra={}) => ({ label:pName(id), data, borderColor:pColor(id), backgroundColor:pColor(id), borderWidth:2, pointRadius:0, pointHoverRadius:4.5, pointHoverBorderWidth:2, pointHoverBorderColor:'#0c1628', tension:.35, spanGaps:false, ...extra });
+function renderDaily(sel,P){
+const base=state.base, days=dayList(P), long=days.length>120;
+const buckets=[]; for (let i=0;i<days.length;i+=long?7:1){ buckets.push([days[i], long?days[Math.min(i+6,days.length-1)]:days[i]]); }
+$('#trend-note').textContent = long ? 'Semana por semana dentro del período elegido' : 'Día por día dentro del período elegido';
+for (const f of ['agua','energia','vapor']){
+const k=famKey(f,base), unit=unitOf(k,base), dec=decOf(k,base);
+const ids = sel.filter(id=>base!=='cab'||plant(id).faena);
+const ds = ids.map(id=>lineDs(id, buckets.map(([s,e])=>val(aggregate(s,e,[id])[id],k,base)), {pointRadius:buckets.length<=31?2:0}));
+$('#u-'+f).textContent = `${unit} por ${long?'semana':'día'}${f!=='agua'?(base==='total'?', beef + grasería':', beef'):''}`;
+$('#lg-'+f).innerHTML = legendHTML(ids.map(id=>({c:pColor(id),t:pName(id)})));
+const o=chartOpts(unit,dec); o.scales.y.beginAtZero = base!=='cab';
+draw('ch-'+f,{type:'line',data:{labels:buckets.map(([s])=>fmtDM(s)),datasets:ds},options:o});
+}
+}
+function renderMonthly(sel,P){
+const base=state.base, k=famKey(state.fam,base), unit=unitOf(k,base), dec=decOf(k,base);
+const ids = sel.filter(id=>base!=='cab'||plant(id).faena);
+const endM=P.cur.end.slice(0,7), months=[];
+for (let i=CONFIG.TREND_MONTHS-1;i>=0;i--){ const ym=addMonths(endM+'-01',-i).slice(0,7); if (ym+'-01'>=state.firstDate.slice(0,7)+'-01') months.push(ym); }
+$('#m-title').textContent = `Evolución mensual de ${FAM[state.fam].label.toLowerCase()}`;
+$('#m-sub').textContent = `${unit}, últimos ${months.length} meses. Cambia el indicador en Comparativo.`;
+const ds = ids.map(id=>lineDs(id, months.map(ym=>val(aggregate(ym+'-01',endOfMonth(ym+'-01'),[id])[id],k,base)), {pointRadius:2.5, tension:.3}));
+const lg = ids.map(id=>({c:pColor(id),t:pName(id)}));
+if (base==='cab') for (const id of ids){ const mt=METAS[id]?.[k]; if (mt!=null){ ds.push({label:`Meta ${pName(id)}`,data:months.map(()=>mt),borderColor:pColor(id),borderDash:[5,4],borderWidth:1.4,pointRadius:0,pointHoverRadius:0}); lg.push({t:`Meta ${pName(id)}`,cls:'dash'}); } }
+$('#lg-month').innerHTML = legendHTML(lg);
+const o=chartOpts(unit,dec); o.scales.y.beginAtZero = base!=='cab';
+draw('ch-month',{type:'line',data:{labels:months.map(monthLabel),datasets:ds},options:o});
+}
+function lastDates(){ const lastBy={}, lastCab={}; for (const r of state.data){ if (BASE_KEYS.some(k=>r[k]!=null&&r[k]!==0)) lastBy[r.p]=r.d; if (r.cab>0) lastCab[r.p]=r.d; } return {lastBy,lastCab}; }
+function renderReporting(A,P){
+const n=daysBetween(P.cur.start,P.cur.end), {lastBy,lastCab}=lastDates();
+const withData = PLANTS.filter(p=>A[p.id].reported>0);
+$('#rp-big').innerHTML = `<b>${withData.length}</b><span>de ${PLANTS.length} plantas con datos en el período</span>`;
+$('#rp-sub').textContent = `Último dato en la planilla: ${fmtDate(state.lastDate)}`;
+$('#rp').innerHTML = PLANTS.map(p=>{ const a=A[p.id], late = lastBy[p.id] && daysBetween(lastBy[p.id],state.lastDate)>2;
+const cabLate = p.faena && lastCab[p.id] && lastBy[p.id] && lastCab[p.id]<lastBy[p.id];
+const st = !a.reported ? 'var(--t3)' : late || cabLate || (p.faena && !a.days.cab) ? 'var(--warn)' : 'var(--good)';
+const info = !a.reported ? 'Sin datos en el período' : `Último registro ${fmtDM(lastBy[p.id])}${cabLate?`, cabezas hasta ${fmtDM(lastCab[p.id])}`:''}`;
+return `<div class="rp-row"><span class="st" style="background:${st}" title="${st.includes('good')?'Al día':st.includes('warn')?'Revisar carga':'Sin datos'}"></span><span class="sw" style="background:${pColor(p.id)}"></span><div class="rp-txt"><b>${p.name}</b><span class="meta">${info}</span></div><span class="days">${a.reported}/${n}</span></div>`; }).join('');
+}
+function renderTable(A,B,sel,P){
+const cols = [
+{k:'p',l:'Planta',cls:'l'},{k:'agua',l:'Agua',u:'m³',b:'total'},{k:'eT',l:'Energía',u:'kWh',b:'total'},{k:'vT',l:'Vapor',u:'t',b:'total'},{k:'cab',l:'Cabezas',b:'total'},
+{k:'agua',l:'Agua/cab',u:'m³',b:'cab',goal:true},{k:'eB',l:'Energía/cab',u:'kWh',b:'cab',goal:true},{k:'vB',l:'Vapor/cab',u:'kg',b:'cab',goal:true},{k:'reported',l:'Días'}
+];
+const v = (a,c) => c.k==='reported' ? a.reported : c.k==='cab' ? (a.days.cab?a.tot.cab:null) : val(a,c.k,c.b);
+const S=state.sort, sc=cols[S.i];
+const order = id => PLANTS.findIndex(p=>p.id===id);
+const ids=[...sel].sort((x,y)=> S.i ? (((v(A[x],sc)??-Infinity)-(v(A[y],sc)??-Infinity))*S.dir || order(x)-order(y)) : (order(x)-order(y))*S.dir);
+const exceed = sel.filter(id=>['agua','eB','vB'].some(k=>METAS[id]?.[k]!=null && val(A[id],k,'cab')>METAS[id][k])).length;
+$('#tb-sub').textContent = `${P.cur.label}${exceed?`. ${exceed} ${exceed===1?'planta excede':'plantas exceden'} al menos una meta`:''}`;
+const head = `<thead><tr>${cols.map((c,i)=>`<th class="${c.cls||''} ${S.i===i?'on':''}" data-i="${i}" title="Ordenar">${c.l}${c.u?`<small>${c.u}</small>`:''}<span class="ar">${S.i===i?(S.dir>0?'▲':'▼'):'⇅'}</span></th>`).join('')}</tr></thead>`;
+const single = sel.length===1;
+const dec = c => c.b==='cab'?METRICS[c.k].dec:(c.k==='vT'?1:0);
+const body = ids.map(id=>{ const a=A[id], b=B[id], p=plant(id);
+return `<tr data-id="${id}" class="${single?'focus':''}">${cols.map(c=>{
+if (c.k==='p') return `<td class="l"><div class="tname"><span class="sw" style="background:${pColor(id)}"></span>${p.name}${p.faena?'':' <small>sin faena</small>'}</div></td>`;
+if (c.k==='reported') return `<td>${a.reported}</td>`;
+if (c.b==='cab' && !p.faena) return `<td class="tnote">no aplica</td>`;
+const cur=v(a,c), prev=v(b,c), g = c.goal ? METAS[id]?.[c.k] : null;
+if (cur==null) return `<td class="tnote">${c.b==='cab'&&a.days[c.k]?'sin cabezas':'—'}</td>`;
+const gm = g!=null ? (cur<=g?'<i class="gm ok" title="Dentro de la meta">✓</i>':'<i class="gm no" title="Excede la meta">▲</i>') : '';
+return `<td><span class="tv">${gm}${fmt(cur,dec(c))}</span><span class="tc">${fmt(prev,dec(c))}</span></td>`; }).join('')}</tr>`; }).join('');
+let total='';
+if (sel.length>1){ const fs=sel.filter(id=>plant(id).faena); const ta=sumAgg(sel.map(id=>A[id])), tb=sumAgg(sel.map(id=>B[id])), fa=sumAgg(fs.map(id=>A[id])), fb=sumAgg(fs.map(id=>B[id]));
+for (const g of ['num','den']){ ta[g]=fa[g]; tb[g]=fb[g]; }
+total = `<tr class="total">${cols.map(c=>{ if (c.k==='p') return '<td class="l">Total</td>'; if (c.k==='reported') return '<td></td>';
+const cur=v(ta,c), prev=v(tb,c); return `<td><span class="tv">${fmt(cur,dec(c))}</span><span class="tc">${fmt(prev,dec(c))} ${delta(cur,prev,c.k==='cab')}</span></td>`; }).join('')}</tr>`; }
+$('#tbl').innerHTML = head + `<tbody>${body}${total}</tbody>`;
+}
+function renderOps(A,sel){
+const ids=sel.filter(id=>plant(id).faena);
+$('#tbl-ops').innerHTML = `<thead><tr><th class="l">Planta</th><th>Cab/día</th><th>Hs faena/día</th><th>Cab/hora</th><th>Parada faena<small>min</small></th><th>Hs desposte/día</th><th>Parada desposte<small>min</small></th></tr></thead><tbody>${
+ids.map(id=>{ const a=A[id], o=a.ops; return `<tr><td class="l"><div class="tname"><span class="sw" style="background:${pColor(id)}"></span>${pName(id)}</div></td>
+<td>${fmt(a.days.cab?a.tot.cab/a.days.cab:null)}</td><td>${fmt(o.df?o.hf/o.df:null,1)}</td><td>${fmt(o.hf?a.tot.cab/o.hf:null,1)}</td><td>${fmt(o.mpf)}</td><td>${fmt(o.dd?o.hd/o.dd:null,1)}</td><td>${fmt(o.mpd)}</td></tr>`; }).join('') || '<tr><td colspan="7" class="tnote" style="text-align:center">Ninguna planta con faena elegida</td></tr>'}</tbody>`;
+}
+function renderAlerts(A,sel,P){
+const {lastBy,lastCab}=lastDates(), items=[];
+for (const id of sel){ const p=plant(id), a=A[id];
+for (const k of ['agua','eB','vB']){ const g=METAS[id]?.[k], v=val(a,k,'cab'); if (g!=null&&v!=null&&v>g) items.push(['b',`<b>${p.name}</b> excede la meta de ${METRICS[k].label.toLowerCase()}: ${fmt(v,METRICS[k].dec)} contra ${fmt(g,METRICS[k].dec)} ${METRICS[k].cabUnit}.`]); }
+if (p.faena && lastBy[id] && lastCab[id] && lastCab[id]<lastBy[id] && lastBy[id]>=P.cur.start) items.push(['w',`<b>${p.name}</b> tiene consumos hasta el ${fmtShort(lastBy[id])} pero cabezas solo hasta el ${fmtShort(lastCab[id])}. Esos días no entran en el cálculo por cabeza.`]);
+else if (p.faena && a.reported && !a.days.cab) items.push(['w',`<b>${p.name}</b> no tiene cabezas cargadas en el período.`]); }
+const outs = state.outliers.filter(o=>sel.includes(o.p)&&o.d>=P.cur.start&&o.d<=P.cur.end);
+for (const o of outs.slice(0,5)) items.push(['w',`<b>${pName(o.p)}, ${fmtShort(o.d)}</b>: ${METRICS[o.k].label.toLowerCase()} de ${fmt(o.v,1)} ${METRICS[o.k].unit}, unas ${fmt(o.v/o.med,0)} veces lo habitual. Quedó fuera de los cálculos.`]);
+if (outs.length>5) items.push(['w',`Hay ${outs.length-5} valores fuera de rango más en el período.`]);
+if (state.meta.invalidDates) items.push(['w',`${state.meta.invalidDates} filas con la fecha mal escrita (por ejemplo, año 0223) no se tienen en cuenta.`]);
+$('#alerts').innerHTML = items.length ? items.map(([t,h])=>`<li class="${t}"><span class="ai">${t==='b'?'▲':'!'}</span><span>${h}</span></li>`).join('') : '<li class="ok"><span class="ai">✓</span><span>Sin alertas para el período y las plantas elegidas.</span></li>';
+const bd=$('#alert-badge'); bd.hidden=!items.length; bd.textContent=items.length;
+}
+function writeHash(){
+const h=new URLSearchParams({g:state.gran,c:state.comp,m:state.fam,b:state.base,pl:[...state.plants].join(',')});
+if (state.gran==='c'){h.set('f',state.from);h.set('t',state.to);} else h.set('p',state.period);
+history.replaceState(null,'','#'+h.toString());
+}
+function buildPlantButtons(){
+$('#f-plants').innerHTML = `<button class="pbtn all" data-v="all">Todas las plantas</button>` + PLANTS.map(p=>`<button class="pbtn" data-v="${p.id}"><span class="sw"></span>${p.name}<small></small></button>`).join('');
+}
+function seg(id,fn){ $(id).addEventListener('click',e=>{ const b=e.target.closest('button'); if (b) fn(b.dataset.v); }); }
+function setup(){
+buildPlantButtons();
+seg('#f-gran',v=>{ const end=state.P?.cur.end||state.lastDate; state.gran=v; if (v!=='c') state.period=keyFor(v,end); buildPeriodOptions(); render(); });
+seg('#f-comp',v=>{ state.comp=v; render(); });
+seg('#f-base',v=>{ state.base=v; render(); });
+seg('#f-fam',v=>{ state.fam=v; render(); });
+$('#f-plants').addEventListener('click',e=>{ const b=e.target.closest('.pbtn'); if (!b) return; const v=b.dataset.v;
+const all = state.plants.size===PLANTS.length;
+if (v==='all') state.plants=new Set(PLANTS.map(p=>p.id));
+else if (all) state.plants=new Set([v]);
+else if (state.plants.has(v)) { state.plants.delete(v); if (!state.plants.size) state.plants=new Set(PLANTS.map(p=>p.id)); }
+else state.plants.add(v);
+render(); });
+$('#f-period').addEventListener('change',e=>{ state.period=e.target.value; render(); });
+$('#f-from').addEventListener('change',e=>{ if (e.target.value){ state.from=e.target.value; if (state.from>state.to) state.to=state.from; buildPeriodOptions(); render(); } });
+$('#f-to').addEventListener('change',e=>{ if (e.target.value){ state.to=e.target.value; if (state.to<state.from) state.from=state.to; buildPeriodOptions(); render(); } });
+$('#btn-refresh').addEventListener('click',()=>loadData(true));
+$('#tbl').addEventListener('click',e=>{
+const th=e.target.closest('th'); if (th){ const i=+th.dataset.i; state.sort = state.sort.i===i ? {i,dir:-state.sort.dir} : {i,dir:i?-1:1}; render(); return; }
+const tr=e.target.closest('tr[data-id]'); if (tr){ const id=tr.dataset.id; state.plants = state.plants.size===1&&state.plants.has(id) ? new Set(PLANTS.map(p=>p.id)) : new Set([id]); render(); } });
+const links=[...document.querySelectorAll('.nav a')];
+const io=new IntersectionObserver(es=>{ for (const en of es) if (en.isIntersecting) links.forEach(a=>a.classList.toggle('on',a.dataset.s===en.target.id)); },{rootMargin:'-15% 0px -75% 0px'});
+for (const a of links){ const t=document.getElementById(a.dataset.s); if (t) io.observe(t); }
+if (CONFIG.REFRESH_MIN>0) setInterval(()=>{ if (!document.hidden) loadData(false); }, CONFIG.REFRESH_MIN*60000);
+document.addEventListener('visibilitychange',()=>{ if (!document.hidden && state.fetchedAt && Date.now()-state.fetchedAt>CONFIG.REFRESH_MIN*60000) loadData(false); });
+}
+Chart.defaults.font.family="'Geist',system-ui,sans-serif";
+setup();
+loadData(false).then(()=>{ setTimeout(()=>{ state.animated=true; },1000); });
+</script>
+</body>
+</html>
